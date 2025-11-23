@@ -4,7 +4,11 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 const dbFile = join(__dirname, "gym.db");
-const schemaPath = join(__dirname, "schema.sql");
+
+// Caminho correto para schema.sql em produção (Render) e desenvolvimento
+// __dirname = dist/db → subir 2 níveis → src/db/schema.sql
+const rootDir = join(__dirname, "..", "..");
+const schemaPath = join(rootDir, "src", "db", "schema.sql");
 
 export const db = new Database(dbFile);
 db.pragma("foreign_keys = ON");
@@ -18,6 +22,7 @@ function colExists(table: string, col: string) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all() as any[];
   return cols.some((c) => c.name === col);
 }
+
 function tableExists(table: string) {
   const row = db
     .prepare(
@@ -28,6 +33,7 @@ function tableExists(table: string) {
 }
 
 // ---------- MIGRAÇÕES LEVES ----------
+
 // workouts.user_id (multi-utilizador)
 if (!colExists("workouts", "user_id")) {
   db.exec(`
@@ -37,7 +43,7 @@ if (!colExists("workouts", "user_id")) {
   console.log("[DB] coluna user_id criada em workouts");
 }
 
-// workouts.muscle_group (default 'corpo inteiro')
+// workouts.muscle_group
 if (!colExists("workouts", "muscle_group")) {
   db.exec(`
     ALTER TABLE workouts ADD COLUMN muscle_group TEXT NOT NULL DEFAULT 'corpo inteiro';
@@ -46,13 +52,13 @@ if (!colExists("workouts", "muscle_group")) {
   console.log("[DB] coluna muscle_group criada em workouts");
 }
 
-// workouts.notes (observações do treino)
+// workouts.notes
 if (!colExists("workouts", "notes")) {
   db.exec(`ALTER TABLE workouts ADD COLUMN notes TEXT;`);
   console.log("[DB] coluna notes criada em workouts");
 }
 
-// ✅ NOVO: workouts.is_favorite (favoritos dos treinos)
+// workouts.is_favorite
 if (!colExists("workouts", "is_favorite")) {
   db.exec(`
     ALTER TABLE workouts ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0;
@@ -61,13 +67,13 @@ if (!colExists("workouts", "is_favorite")) {
   console.log("[DB] coluna is_favorite criada em workouts");
 }
 
-// workout_items.note (observações por exercício)
+// workout_items.note
 if (!colExists("workout_items", "note")) {
   db.exec(`ALTER TABLE workout_items ADD COLUMN note TEXT;`);
   console.log("[DB] coluna note criada em workout_items");
 }
 
-// histórico por item (para PR, últimas entradas, etc.)
+// workout_item_logs
 if (!tableExists("workout_item_logs")) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS workout_item_logs (
@@ -85,7 +91,7 @@ if (!tableExists("workout_item_logs")) {
   console.log("[DB] tabela workout_item_logs criada");
 }
 
-// estatísticas de exercícios (para /exercises/popular)
+// exercise_stats
 if (!tableExists("exercise_stats")) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS exercise_stats (
