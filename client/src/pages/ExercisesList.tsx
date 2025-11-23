@@ -19,7 +19,7 @@ export default function ExercisesList() {
   const [muscle, setMuscle] = useState("");
   const [sort, setSort] = useState("name,ASC");
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(10);
+  const [size] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
 
